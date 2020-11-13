@@ -13,10 +13,13 @@ firebase.initializeApp(firebaseConfig);
 
 
 class Tegelane {
-  constructor(nimi, x, y) {
+  constructor(nimi, uusX, uusY, värv) {
     this.nimi = nimi;
-    this.x = x;
-    this.y = y;
+    this.x = uusX;
+    this.y = uusY;
+    this.uusX = uusX;
+    this.uusY = uusY;
+    this.värv = värv;
   };
 
   joonistaPea = function() {
@@ -38,6 +41,7 @@ class Tegelane {
   }
 
   joonista = function() {
+    fill(this.värv);
     this.joonistaPea();
     this.joonistaKere();
     this.joonistaKäed();
@@ -54,7 +58,7 @@ let minuTegelaseRef;
 function init() {
   let minuTegelaseNimi = prompt("Sisesta nimi");
   if (!minuTegelaseNimi) minuTegelaseNimi = "ei taha nime panna" + Math.floor(Math.random() * 100);
-  minuTegelane = new Tegelane(minuTegelaseNimi, 640, 360);
+  minuTegelane = new Tegelane(minuTegelaseNimi, 640, 360, "white");
   minuTegelaseRef = firebase.database().ref(`tegelased/${minuTegelaseNimi}`);
 };
 document.addEventListener("DOMContentLoaded", init);
@@ -63,30 +67,36 @@ document.addEventListener("DOMContentLoaded", init);
 let tegelasedMassiiv = [];
 let ajadSurmaniMassiiv = [];
 function tegelasedRefresh(snapshot) {
-  tegelasedMassiiv.forEach(tegelane => delete tegelane);
-  tegelasedMassiiv = [];
   let tegelased = snapshot.val();
   for (tegelaseNimi in tegelased) {
     if (tegelaseNimi == minuTegelane.nimi) {}
     else if (ajadSurmaniMassiiv[tegelaseNimi]) ajadSurmaniMassiiv[tegelaseNimi] -= 1;
-    else ajadSurmaniMassiiv[tegelaseNimi] = 2000;
+    else ajadSurmaniMassiiv[tegelaseNimi] = 60;
 
     if (ajadSurmaniMassiiv[tegelaseNimi] < 1) {
-      console.log(ajadSurmaniMassiiv);
       firebase.database().ref(`tegelased/${tegelaseNimi}`).set(null);
+      delete tegelasedMassiiv[tegelaseNimi];
+      delete ajadSurmaniMassiiv[tegelaseNimi];
       continue;
     };
 
-    let tegelane = new Tegelane(tegelaseNimi, tegelased[tegelaseNimi].x, tegelased[tegelaseNimi].y);
-    if (tegelane.nimi != minuTegelane.nimi) tegelasedMassiiv.push(tegelane);
+
+    if (tegelaseNimi == minuTegelane.nimi) continue;
+
+    if (tegelasedMassiiv[tegelaseNimi]) {
+      tegelasedMassiiv[tegelaseNimi].uusX = tegelased[tegelaseNimi].x;
+      tegelasedMassiiv[tegelaseNimi].uusY = tegelased[tegelaseNimi].y;
+      tegelasedMassiiv[tegelaseNimi].värv = tegelased[tegelaseNimi].värv;
+    }
+    else tegelasedMassiiv[tegelaseNimi] = new Tegelane(tegelaseNimi, tegelased[tegelaseNimi].x, tegelased[tegelaseNimi].y, tegelased[tegelaseNimi].värv);
   };
 };
 
 let tegelasedRef = firebase.database().ref("tegelased");
 
-
+let canvas;
 function setup() {
-  createCanvas(1280, 720);
+  canvas = createCanvas(1280, 720);
   background("gray");
   textAlign(CENTER);
   frameRate(50);
@@ -101,14 +111,15 @@ function draw() {
 
     minuTegelaseRef.set({
       x: minuTegelane.x,
-      y: minuTegelane.y
+      y: minuTegelane.y,
+      värv: minuTegelane.värv
     }); 
   }
 
 
-  background("gray")
-
-  let keyDown = false;
+  background("gray");
+  let värvideVorm = new p5.Element(document.värvideVorm);
+  värvideVorm.position(canvas.position().x + 1100, canvas.position().y + 30);
 
   if (keyIsDown(LEFT_ARROW)) {
     minuTegelane.x -= 5;
@@ -128,12 +139,33 @@ function draw() {
   };
 
 
-  if (keyDown) {
-       
-  }
-
-
   minuTegelane.joonista();
 
-  tegelasedMassiiv.forEach(tegelane => tegelane.joonista());
+  for (tegelaseNimi in tegelasedMassiiv) {
+    let x = tegelasedMassiiv[tegelaseNimi].x;
+    let y = tegelasedMassiiv[tegelaseNimi].y;
+    let uusX = tegelasedMassiiv[tegelaseNimi].uusX;
+    let uusY = tegelasedMassiiv[tegelaseNimi].uusY;
+
+    if (x != uusX || y != uusY) ajadSurmaniMassiiv[tegelaseNimi] = 100;
+
+    if (uusX - x >= 5) tegelasedMassiiv[tegelaseNimi].x += 5;
+    else if (uusX - x <= -5) tegelasedMassiiv[tegelaseNimi].x -= 5;
+    else tegelasedMassiiv[tegelaseNimi].x = uusX;
+
+    if (uusY - y >= 5) tegelasedMassiiv[tegelaseNimi].y += 5;
+    else if (uusY - y <= -5) tegelasedMassiiv[tegelaseNimi].y -= 5;
+    else tegelasedMassiiv[tegelaseNimi].y = uusY;
+    
+    tegelasedMassiiv[tegelaseNimi].joonista();
+  }
+}
+
+
+var värviNupud = document.getElementsByName("värvid");
+värviNupud.forEach (värviNupp => värviNupp.style.backgroundColor = värviNupp.value);
+
+document.värvideVorm.onclick = function() {
+  var checkedVärviNuppElement = document.querySelector('input[name = värvid]:checked')
+  minuTegelane.värv = checkedVärviNuppElement.value;
 }

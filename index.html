@@ -16,12 +16,36 @@
       margin: auto;
       display: block;
     }
+
+    #värvideVorm input {
+			-webkit-appearance: none;
+			background-color: black;
+			padding: 1em;
+			outline: 0.1em solid black;
+		}
+
+		#värvideVorm input:checked {
+			outline: 0.2em solid black;
+		}
   </style>
 </head>
 <body>
   <main>
   </main>
-
+  <form name="värvideVorm" id="värvideVorm">
+    <input type="radio" name="värvid" value="white" checked id="0">
+    <input type="radio" name="värvid" value="black" id="1">
+    <input type="radio" name="värvid" value="green" id="2">
+    <input type="radio" name="värvid" value="blue" id="3"><br>
+    <input type="radio" name="värvid" value="red" id="4">
+    <input type="radio" name="värvid" value="yellow" id="5">
+    <input type="radio" name="värvid" value="purple" id="6">
+    <input type="radio" name="värvid" value="orange" id="7"><br>
+    <input type="radio" name="värvid" value="pink" id="8">
+    <input type="radio" name="värvid" value="gray" id="9">
+    <input type="radio" name="värvid" value="brown" id="10"><br>
+    Muuda enda värvi
+  </form>
  
 </body>
 </html>
