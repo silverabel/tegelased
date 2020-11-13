@@ -95,11 +95,16 @@ function tegelasedRefresh(snapshot) {
 let tegelasedRef = firebase.database().ref("tegelased");
 
 let canvas;
+let värvideVorm;
 function setup() {
   canvas = createCanvas(1280, 720);
   background("gray");
   textAlign(CENTER);
   frameRate(50);
+
+  document.värvideVorm.hidden = false;
+  värvideVorm = new p5.Element(document.värvideVorm);
+  
 }
 
 let counter = 0;
@@ -118,7 +123,7 @@ function draw() {
 
 
   background("gray");
-  let värvideVorm = new p5.Element(document.värvideVorm);
+  
   värvideVorm.position(canvas.position().x + 1100, canvas.position().y + 30);
 
   if (keyIsDown(LEFT_ARROW)) {
