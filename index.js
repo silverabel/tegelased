@@ -66,33 +66,30 @@ document.addEventListener("DOMContentLoaded", init);
 
 let tegelasedMassiiv = [];
 let ajadSurmaniMassiiv = [];
-function tegelasedRefresh(snapshot) {
-  let tegelased = snapshot.val();
-  for (tegelaseNimi in tegelased) {
-    if (tegelaseNimi == minuTegelane.nimi) {}
-    else if (ajadSurmaniMassiiv[tegelaseNimi]) ajadSurmaniMassiiv[tegelaseNimi] -= 1;
-    else ajadSurmaniMassiiv[tegelaseNimi] = 60;
-
-    if (ajadSurmaniMassiiv[tegelaseNimi] < 1) {
-      firebase.database().ref(`tegelased/${tegelaseNimi}`).set(null);
-      delete tegelasedMassiiv[tegelaseNimi];
-      delete ajadSurmaniMassiiv[tegelaseNimi];
-      continue;
-    };
-
-
-    if (tegelaseNimi == minuTegelane.nimi) continue;
-
-    if (tegelasedMassiiv[tegelaseNimi]) {
-      tegelasedMassiiv[tegelaseNimi].uusX = tegelased[tegelaseNimi].x;
-      tegelasedMassiiv[tegelaseNimi].uusY = tegelased[tegelaseNimi].y;
-      tegelasedMassiiv[tegelaseNimi].värv = tegelased[tegelaseNimi].värv;
-    }
-    else tegelasedMassiiv[tegelaseNimi] = new Tegelane(tegelaseNimi, tegelased[tegelaseNimi].x, tegelased[tegelaseNimi].y, tegelased[tegelaseNimi].värv);
-  };
-};
-
+let eluAegKaadrites = 3600;
 let tegelasedRef = firebase.database().ref("tegelased");
+
+tegelasedRef.on("child_added", (snapshot) => {
+  if (snapshot.key == minuTegelane.nimi) return;
+  tegelasedMassiiv[snapshot.key] = new Tegelane(snapshot.key, snapshot.val().x, snapshot.val().y, snapshot.val().värv);
+  ajadSurmaniMassiiv[snapshot.key] = eluAegKaadrites;
+  
+  tegelasedRef.child(snapshot.key).on("value", onValueChanged);
+});
+
+function onValueChanged(snapshot) {
+  tegelasedMassiiv[snapshot.key].uusX = snapshot.val().x;
+  tegelasedMassiiv[snapshot.key].uusY = snapshot.val().y;
+  tegelasedMassiiv[snapshot.key].värv = snapshot.val().värv;
+}
+
+
+tegelasedRef.on("child_removed", (snapshot) => {
+  delete tegelasedMassiiv[snapshot.key];
+  delete ajadSurmaniMassiiv[snapshot.key];
+});
+
+
 
 let canvas;
 let värvideVorm;
@@ -104,23 +101,11 @@ function setup() {
 
   document.värvideVorm.hidden = false;
   värvideVorm = new p5.Element(document.värvideVorm);
-  
 }
 
-let counter = 0;
+let freeToSend = true;
 function draw() {
-  counter += 1;
-  if (counter == 40) {
-    counter = 0;
-    tegelasedRef.once('value', tegelasedRefresh);
-
-    minuTegelaseRef.set({
-      x: minuTegelane.x,
-      y: minuTegelane.y,
-      värv: minuTegelane.värv
-    }); 
-  }
-
+  let keyDown = false;
 
   background("gray");
   
@@ -143,17 +128,37 @@ function draw() {
     keyDown = true;
   };
 
+  if (keyDown && freeToSend) {
+    freeToSend = false;
+    minuTegelaseRef.set({
+      x: minuTegelane.x,
+      y: minuTegelane.y,
+      värv: minuTegelane.värv
+    }, () => freeToSend = true);
+  }
+
 
   minuTegelane.joonista();
 
   for (tegelaseNimi in tegelasedMassiiv) {
+
+    if (ajadSurmaniMassiiv[tegelaseNimi] < 1) {
+      firebase.database().ref(`tegelased/${tegelaseNimi}`).set(null);
+      delete tegelasedMassiiv[tegelaseNimi];
+      delete ajadSurmaniMassiiv[tegelaseNimi];
+      continue;
+    };
+
+
     let x = tegelasedMassiiv[tegelaseNimi].x;
     let y = tegelasedMassiiv[tegelaseNimi].y;
     let uusX = tegelasedMassiiv[tegelaseNimi].uusX;
     let uusY = tegelasedMassiiv[tegelaseNimi].uusY;
 
-    if (x != uusX || y != uusY) ajadSurmaniMassiiv[tegelaseNimi] = 100;
+    if (x != uusX || y != uusY) ajadSurmaniMassiiv[tegelaseNimi] = eluAegKaadrites;
+    else ajadSurmaniMassiiv[tegelaseNimi] -= 1;
 
+    
     if (uusX - x >= 5) tegelasedMassiiv[tegelaseNimi].x += 5;
     else if (uusX - x <= -5) tegelasedMassiiv[tegelaseNimi].x -= 5;
     else tegelasedMassiiv[tegelaseNimi].x = uusX;
@@ -164,6 +169,15 @@ function draw() {
     
     tegelasedMassiiv[tegelaseNimi].joonista();
   }
+}
+
+
+function keyReleased() {
+  minuTegelaseRef.set({
+    x: minuTegelane.x,
+    y: minuTegelane.y,
+    värv: minuTegelane.värv
+  });
 }
 
 
