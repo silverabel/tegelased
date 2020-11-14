@@ -71,7 +71,7 @@ function tegelasedRefresh(snapshot) {
   for (tegelaseNimi in tegelased) {
     if (tegelaseNimi == minuTegelane.nimi) {}
     else if (ajadSurmaniMassiiv[tegelaseNimi]) ajadSurmaniMassiiv[tegelaseNimi] -= 1;
-    else ajadSurmaniMassiiv[tegelaseNimi] = 60;
+    else ajadSurmaniMassiiv[tegelaseNimi] = 300;
 
     if (ajadSurmaniMassiiv[tegelaseNimi] < 1) {
       firebase.database().ref(`tegelased/${tegelaseNimi}`).set(null);
