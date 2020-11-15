@@ -78,6 +78,7 @@ tegelasedRef.on("child_added", (snapshot) => {
 });
 
 function onValueChanged(snapshot) {
+  if (!snapshot.val()) return;
   tegelasedMassiiv[snapshot.key].uusX = snapshot.val().x;
   tegelasedMassiiv[snapshot.key].uusY = snapshot.val().y;
   tegelasedMassiiv[snapshot.key].värv = snapshot.val().värv;
@@ -87,6 +88,7 @@ function onValueChanged(snapshot) {
 tegelasedRef.on("child_removed", (snapshot) => {
   delete tegelasedMassiiv[snapshot.key];
   delete ajadSurmaniMassiiv[snapshot.key];
+  tegelasedRef.child(snapshot.key).off();
 });
 
 
@@ -143,9 +145,7 @@ function draw() {
   for (tegelaseNimi in tegelasedMassiiv) {
 
     if (ajadSurmaniMassiiv[tegelaseNimi] < 1) {
-      firebase.database().ref(`tegelased/${tegelaseNimi}`).set(null);
-      delete tegelasedMassiiv[tegelaseNimi];
-      delete ajadSurmaniMassiiv[tegelaseNimi];
+      firebase.database().ref(`tegelased/${tegelaseNimi}`).remove();
       continue;
     };
 
