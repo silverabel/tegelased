@@ -27,11 +27,33 @@
 		#värvideVorm input:checked {
 			outline: 0.2em solid black;
 		}
+
+
+    #dialog {
+      width:      200px;
+      margin:     auto;
+      padding:    10px;
+      border:     thin solid black;
+      background: white;
+    }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <main>
   </main>
+  
+  <div id="dialog" class="hidden">
+    <div class="message">foobar</div>
+    <input type="text">
+    <div>
+      <button class="ok">Ok</button>
+      <button hidden class="cancel">Cancel</button>
+    </div>
+  </div>
+
   <form name="värvideVorm" id="värvideVorm" hidden>
     <input type="radio" name="värvid" value="white" checked id="0">
     <input type="radio" name="värvid" value="black" id="1">
@@ -46,6 +68,5 @@
     <input type="radio" name="värvid" value="brown" id="10"><br>
     Muuda enda värvi
   </form>
- 
 </body>
 </html>
