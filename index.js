@@ -55,7 +55,7 @@ class Tegelane {
 
 let tegelasedMap = new Map();
 let ajadSurmani = {};
-let eluAegKaadrites = 600;
+let eluAegKaadrites = 3600;
 let tegelasedRef = firebase.database().ref("tegelased");
 tegelasedRef.on("child_added", (snapshot) => {
   if (snapshot.key == minuTegelane.nimi) return;
@@ -100,7 +100,6 @@ function setup() {
   prompt.show('Sisesta nimi')
     .waitForUser()
     .then(function(nimi) {
-      document.getElementsByTagName("body")[0].focus();
       minuTegelane.nimi = nimi || "ei taha nime panna" + Math.floor(Math.random() * 100);
       tegelasedRef.child(minuTegelane.nimi).set({
         x: minuTegelane.x,
@@ -145,6 +144,13 @@ function draw() {
     minuTegelane.y += 5;
     keyDown = true;
   };
+
+  if (minuTegelane.x > canvas.width + 80) minuTegelane.x = -80;
+  if (minuTegelane.x < -80) minuTegelane.x = canvas.width + 80
+  if (minuTegelane.y > canvas.height + 40) minuTegelane.y = -80;
+  if (minuTegelane.y < -80) minuTegelane.y = canvas.height + 40
+
+
 
   if (keyDown && freeToSend) {
     freeToSend = false;
