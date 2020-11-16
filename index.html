@@ -10,11 +10,13 @@
   <style>
     body {
       margin: 0;
+      background-color: gray;
     }
 
     canvas {
       margin: auto;
       display: block;
+      border: 1px black solid;
     }
 
     #värvideVorm input {
@@ -29,15 +31,12 @@
 		}
 
 
-    #dialog {
+    #prompt {
       width:      200px;
       margin:     auto;
       padding:    10px;
       border:     thin solid black;
       background: white;
-    }
-    .hidden {
-      display: none;
     }
   </style>
 </head>
@@ -45,12 +44,11 @@
   <main>
   </main>
   
-  <div id="dialog" class="hidden">
-    <div class="message">foobar</div>
-    <input type="text">
+  <div id="prompt" hidden>
+    <div>Sisesta nimi</div>
+      <input onkeyup="onPromptInputKeyup(event)" id="promptInput" type="text">
     <div>
-      <button class="ok">Ok</button>
-      <button hidden class="cancel">Cancel</button>
+      <button onclick="onPromptButtonClick(true)" id="promptButton">Ok</button>
     </div>
   </div>
 

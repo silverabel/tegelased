@@ -58,7 +58,7 @@ let ajadSurmani = {};
 let eluAegKaadrites = 3600;
 let tegelasedRef = firebase.database().ref("tegelased");
 tegelasedRef.on("child_added", (snapshot) => {
-  if (snapshot.key == minuTegelane.nimi) return;
+  if (snapshot.key === minuTegelane.nimi) return;
   tegelasedMap.set(snapshot.key, new Tegelane(snapshot.key, snapshot.val().x, snapshot.val().y, snapshot.val().värv));
   ajadSurmani[snapshot.key] = eluAegKaadrites;
   
@@ -93,26 +93,11 @@ function setup() {
 
   minuTegelane = new Tegelane("Nimetu", 640, 360, "white");
 
-  let prompt = new PromptDialog();
-  p5Prompt = new p5.Element(prompt.el);
+  let prompt = document.getElementById("prompt");
+  p5Prompt = new p5.Element(prompt);
   p5Prompt.position(canvas.position().x + 540, canvas.position().y + 200);
-
-  prompt.show('Sisesta nimi')
-    .waitForUser()
-    .then(function(nimi) {
-      minuTegelane.nimi = nimi || "ei taha nime panna" + Math.floor(Math.random() * 100);
-      tegelasedRef.child(minuTegelane.nimi).set({
-        x: minuTegelane.x,
-        y: minuTegelane.y,
-        värv: minuTegelane.värv
-      });
-    })
-    .catch(function(error) {
-      console.log("Error: ", error);
-    })
-    .finally(function() {
-      prompt.hide();
-    });
+  prompt.hidden = false;
+  document.getElementById("promptInput").focus();
 }
 
 
@@ -121,7 +106,7 @@ function windowResized() {
   p5Prompt.position(canvas.position().x + 540, canvas.position().y + 200);
 }
 
-
+let kiirus = 5;
 let freeToSend = true;
 function draw() {
   background("gray");
@@ -129,26 +114,26 @@ function draw() {
   let keyDown = false;
   
   if (keyIsDown(LEFT_ARROW)) {
-    minuTegelane.x -= 5;
+    minuTegelane.x -= kiirus;
     keyDown = true;
   };
   if (keyIsDown(RIGHT_ARROW)) {
-    minuTegelane.x += 5;
+    minuTegelane.x += kiirus;
     keyDown = true;
   };
   if (keyIsDown(UP_ARROW)) {
-    minuTegelane.y -= 5;
+    minuTegelane.y -= kiirus;
     keyDown = true;
   };
   if (keyIsDown(DOWN_ARROW)) {
-    minuTegelane.y += 5;
+    minuTegelane.y += kiirus;
     keyDown = true;
   };
 
   if (minuTegelane.x > canvas.width + 80) minuTegelane.x = -80;
   if (minuTegelane.x < -80) minuTegelane.x = canvas.width + 80
-  if (minuTegelane.y > canvas.height + 40) minuTegelane.y = -80;
-  if (minuTegelane.y < -80) minuTegelane.y = canvas.height + 40
+  if (minuTegelane.y > canvas.height + 80) minuTegelane.y = -120;
+  if (minuTegelane.y < -120) minuTegelane.y = canvas.height + 80;
 
 
 
@@ -163,10 +148,8 @@ function draw() {
 
 
   minuTegelane.joonista();
-
   
   for (let [tegelaseNimi, tegelane] of tegelasedMap) {
-
     if (ajadSurmani[tegelaseNimi] < 1) {
       tegelasedRef.child(tegelaseNimi).off();
       tegelasedRef.child(tegelaseNimi).remove();
@@ -181,7 +164,7 @@ function draw() {
     if (x != uusX || y != uusY) ajadSurmani[tegelaseNimi] = eluAegKaadrites;
     else ajadSurmani[tegelaseNimi] -= 1;
 
-    
+
     if (uusX - x >= 5) tegelane.x += 5;
     else if (uusX - x <= -5) tegelane.x -= 5;
     else tegelane.x = uusX;
@@ -223,59 +206,21 @@ for (let värviNupp of värviNupud) {
 }
 
 
-
-
-var noop = function() {
-  return this;
-};
-
-function Dialog() {
-  this.setCallbacks(noop, noop);
+function onPromptButtonClick(shouldTakeInputValue) {
+  if (!shouldTakeInputValue) minuTegelane.nimi = "ei taha nime panna" + Math.floor(Math.random() * 100);
+  else {
+    let inputValue = document.getElementById("promptInput").value.replace(/[\.\#\$\[\]\/]/g, "");
+    minuTegelane.nimi = inputValue || "ei taha nime panna" + Math.floor(Math.random() * 100);
+  }
+  tegelasedRef.child(minuTegelane.nimi).set({
+    x: minuTegelane.x,
+    y: minuTegelane.y,
+    värv: minuTegelane.värv
+  });
+  p5Prompt.hide();
 }
-Dialog.prototype.setCallbacks = function(okCallback, cancelCallback) {
-  this._okCallback     = okCallback;
-  this._cancelCallback = cancelCallback;
-  return this;
-};
-Dialog.prototype.waitForUser = function() {
-  var _this = this;
-  return new Promise(function(resolve, reject) {
-    _this.setCallbacks(resolve, reject);
-  });
-};
-Dialog.prototype.show = noop;
-Dialog.prototype.hide = noop;
 
-
-function PromptDialog() {
-  Dialog.call(this);
-  this.el           = document.getElementById('dialog');
-  this.inputEl      = this.el.querySelector('input');
-  this.messageEl    = this.el.querySelector('.message');
-  this.okButton     = this.el.querySelector('button.ok');
-  this.cancelButton = this.el.querySelector('button.cancel');
-  this.attachDomEvents();
+function onPromptInputKeyup(event) {
+  if (event.key === "Enter") onPromptButtonClick(true);
+  if (event.key === "Escape") onPromptButtonClick(false);
 }
-PromptDialog.prototype = Object.create(Dialog.prototype);
-PromptDialog.prototype.attachDomEvents = function() {
-  var _this = this;
-  this.okButton.addEventListener('click', function() {
-    _this._okCallback(_this.inputEl.value);
-  });
-  this.cancelButton.addEventListener('click', function() {
-    _this._cancelCallback();
-  });
-  this.inputEl.addEventListener('keyup', function(event) {
-    if (event.key === "Enter") _this._okCallback(_this.inputEl.value);
-  });
-};
-PromptDialog.prototype.show = function(message) {
-  this.messageEl.innerHTML = String(message);
-  this.el.className = '';
-  this.inputEl.focus();
-  return this;
-};
-PromptDialog.prototype.hide = function() {
-  this.el.className = 'hidden';
-  return this;
-};
