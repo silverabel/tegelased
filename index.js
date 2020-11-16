@@ -20,6 +20,7 @@ class Tegelane {
     this.uusX = uusX;
     this.uusY = uusY;
     this.värv = värv;
+    this.kiirus = 5;
   };
 
   joonistaPea = function() {
@@ -83,30 +84,30 @@ let canvas;
 let värvideVorm;
 let p5Prompt;
 function setup() {
-  canvas = createCanvas(1280, 720);
+  canvas = createCanvas(windowWidth, windowHeight);
   background("gray");
   textAlign(CENTER);
   
   värvideVorm = new p5.Element(document.värvideVorm);
-  värvideVorm.position(canvas.position().x + 1100, canvas.position().y + 30);
+  värvideVorm.position(windowWidth - 180, 30);
   document.värvideVorm.hidden = false;
 
-  minuTegelane = new Tegelane("Nimetu", 640, 360, "white");
+  minuTegelane = new Tegelane("Nimetu", windowWidth / 2, 360, "white");
 
   let prompt = document.getElementById("prompt");
   p5Prompt = new p5.Element(prompt);
-  p5Prompt.position(canvas.position().x + 540, canvas.position().y + 200);
+  p5Prompt.position(windowWidth / 2 - 111, 200);
   prompt.hidden = false;
   document.getElementById("promptInput").focus();
 }
 
 
 function windowResized() {
-  värvideVorm.position(canvas.position().x + 1100, canvas.position().y + 30);
-  p5Prompt.position(canvas.position().x + 540, canvas.position().y + 200);
+  resizeCanvas(windowWidth, windowHeight);
+  värvideVorm.position(windowWidth - 180, 30);
+  p5Prompt.position(windowWidth / 2 - 111, 200);
 }
 
-let kiirus = 5;
 let freeToSend = true;
 function draw() {
   background("gray");
@@ -114,24 +115,24 @@ function draw() {
   let keyDown = false;
   
   if (keyIsDown(LEFT_ARROW)) {
-    minuTegelane.x -= kiirus;
+    minuTegelane.x -= minuTegelane.kiirus;
     keyDown = true;
   };
   if (keyIsDown(RIGHT_ARROW)) {
-    minuTegelane.x += kiirus;
+    minuTegelane.x += minuTegelane.kiirus;
     keyDown = true;
   };
   if (keyIsDown(UP_ARROW)) {
-    minuTegelane.y -= kiirus;
+    minuTegelane.y -= minuTegelane.kiirus;
     keyDown = true;
   };
   if (keyIsDown(DOWN_ARROW)) {
-    minuTegelane.y += kiirus;
+    minuTegelane.y += minuTegelane.kiirus;
     keyDown = true;
   };
 
   if (minuTegelane.x > canvas.width + 80) minuTegelane.x = -80;
-  if (minuTegelane.x < -80) minuTegelane.x = canvas.width + 80
+  if (minuTegelane.x < -80) minuTegelane.x = canvas.width + 80;
   if (minuTegelane.y > canvas.height + 80) minuTegelane.y = -120;
   if (minuTegelane.y < -120) minuTegelane.y = canvas.height + 80;
 
@@ -155,6 +156,9 @@ function draw() {
       tegelasedRef.child(tegelaseNimi).remove();
       continue;
     };
+
+    if (Math.abs(tegelane.x - tegelane.uusX) > windowWidth) tegelane.x = tegelane.uusX;
+    if (Math.abs(tegelane.y - tegelane.uusY) > windowHeight) tegelane.y = tegelane.uusY;
 
     let x = tegelane.x;
     let y = tegelane.y;
@@ -188,21 +192,21 @@ function keyReleased() {
   });
 }
 
-
-var värviNupud = document.getElementsByName("värvid");
+let mouseDownTarget;
+let värviNupud = document.getElementsByName("värvid");
 for (let värviNupp of värviNupud) {
-  värviNupp.style.backgroundColor = värviNupp.value
+  värviNupp.style.backgroundColor = värviNupp.value;
   värviNupp.onclick = function() {
     minuTegelane.värv = this.value;
   }
   värviNupp.onmousedown = function() {
-    this.onmouseup = function() {
-      tegelasedRef.child(minuTegelane.nimi).update({
-        värv: this.value
-      })
-      this.onmouseup = null;
-    }
+    mouseDownTarget = this;
   }
+}
+
+function mouseReleased(event) {
+  if (event.target === mouseDownTarget) tegelasedRef.child(minuTegelane.nimi).update({värv: mouseDownTarget.value});
+  mouseDownTarget = null;
 }
 
 
