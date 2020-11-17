@@ -13,14 +13,14 @@ firebase.initializeApp(firebaseConfig);
 
 
 class Tegelane {
-  constructor(nimi, uusX, uusY, värv) {
+  constructor(nimi, uusX, uusY, värv, kiirus) {
     this.nimi = nimi;
     this.x = uusX;
     this.y = uusY;
     this.uusX = uusX;
     this.uusY = uusY;
     this.värv = värv;
-    this.kiirus = 5;
+    this.kiirus = kiirus;
   };
 
   joonistaPea = function() {
@@ -60,17 +60,20 @@ let eluAegKaadrites = 3600;
 let tegelasedRef = firebase.database().ref("tegelased");
 tegelasedRef.on("child_added", (snapshot) => {
   if (snapshot.key === minuTegelane.nimi) return;
-  tegelasedMap.set(snapshot.key, new Tegelane(snapshot.key, snapshot.val().x, snapshot.val().y, snapshot.val().värv));
+  tegelasedMap.set(snapshot.key, new Tegelane(snapshot.key, snapshot.val().x, snapshot.val().y, snapshot.val().värv, snapshot.val().kiirus));
   ajadSurmani[snapshot.key] = eluAegKaadrites;
   
   tegelasedRef.child(snapshot.key).on("value", onChildValueChanged);
 });
 
 function onChildValueChanged(snapshot) {
+  if (!snapshot.val()) return;
   let tegelane = tegelasedMap.get(snapshot.key);
   tegelane.uusX = snapshot.val().x;
   tegelane.uusY = snapshot.val().y;
   tegelane.värv = snapshot.val().värv;
+  tegelane.kiirus = snapshot.val().kiirus;
+  console.log(tegelane.uusX);
 }
 
 tegelasedRef.on("child_removed", (snapshot) => {
@@ -92,7 +95,7 @@ function setup() {
   värvideVorm.position(windowWidth - 180, 30);
   document.värvideVorm.hidden = false;
 
-  minuTegelane = new Tegelane("Nimetu", windowWidth / 2, 360, "white");
+  minuTegelane = new Tegelane("Nimetu", 50, 50, "white", 1);
 
   let prompt = document.getElementById("prompt");
   p5Prompt = new p5.Element(prompt);
@@ -131,10 +134,10 @@ function draw() {
     keyDown = true;
   };
 
-  if (minuTegelane.x > canvas.width + 80) minuTegelane.x = -80;
-  if (minuTegelane.x < -80) minuTegelane.x = canvas.width + 80;
-  if (minuTegelane.y > canvas.height + 80) minuTegelane.y = -120;
-  if (minuTegelane.y < -120) minuTegelane.y = canvas.height + 80;
+  if (minuTegelane.x > 110) minuTegelane.x = -10;
+  if (minuTegelane.x < -10) minuTegelane.x = 110;
+  if (minuTegelane.y > 115) minuTegelane.y = -15;
+  if (minuTegelane.y < -15) minuTegelane.y = 115;
 
 
 
@@ -143,12 +146,20 @@ function draw() {
     tegelasedRef.child(minuTegelane.nimi).set({
       x: minuTegelane.x,
       y: minuTegelane.y,
-      värv: minuTegelane.värv
+      värv: minuTegelane.värv,
+      kiirus: minuTegelane.kiirus
     }, () => freeToSend = true);
   }
 
+  let xProtsendinaLaiusest = minuTegelane.x;
+  let yProtsendinaKõrgusest = minuTegelane.y;
+  minuTegelane.x = minuTegelane.x / 100 * windowWidth;
+  minuTegelane.y = minuTegelane.y / 100 * windowHeight;
 
   minuTegelane.joonista();
+
+  minuTegelane.x = xProtsendinaLaiusest;
+  minuTegelane.y = yProtsendinaKõrgusest;
   
   for (let [tegelaseNimi, tegelane] of tegelasedMap) {
     if (ajadSurmani[tegelaseNimi] < 1) {
@@ -157,8 +168,8 @@ function draw() {
       continue;
     };
 
-    if (Math.abs(tegelane.x - tegelane.uusX) > windowWidth) tegelane.x = tegelane.uusX;
-    if (Math.abs(tegelane.y - tegelane.uusY) > windowHeight) tegelane.y = tegelane.uusY;
+    if (Math.abs(tegelane.x - tegelane.uusX) > 100) tegelane.x = tegelane.uusX;
+    if (Math.abs(tegelane.y - tegelane.uusY) > 100) tegelane.y = tegelane.uusY;
 
     let x = tegelane.x;
     let y = tegelane.y;
@@ -169,15 +180,23 @@ function draw() {
     else ajadSurmani[tegelaseNimi] -= 1;
 
 
-    if (uusX - x >= 5) tegelane.x += 5;
-    else if (uusX - x <= -5) tegelane.x -= 5;
+    if (uusX - x >= tegelane.kiirus) tegelane.x += tegelane.kiirus;
+    else if (uusX - x <= -tegelane.kiirus) tegelane.x -= tegelane.kiirus;
     else tegelane.x = uusX;
 
-    if (uusY - y >= 5) tegelane.y += 5;
-    else if (uusY - y <= -5) tegelane.y -= 5;
+    if (uusY - y >= tegelane.kiirus) tegelane.y += tegelane.kiirus;
+    else if (uusY - y <= -tegelane.kiirus) tegelane.y -= tegelane.kiirus;
     else tegelane.y = uusY;
     
+    let xProtsendinaLaiusest = tegelane.x;
+    let yProtsendinaKõrgusest = tegelane.y;
+    tegelane.x = tegelane.x / 100 * windowWidth;
+    tegelane.y = tegelane.y / 100 * windowHeight;
+
     tegelane.joonista();
+
+    tegelane.x = xProtsendinaLaiusest;
+    tegelane.y = yProtsendinaKõrgusest;
   }
 }
 
@@ -188,7 +207,8 @@ function keyReleased() {
   tegelasedRef.child(minuTegelane.nimi).update({
     x: minuTegelane.x,
     y: minuTegelane.y,
-    värv: minuTegelane.värv
+    värv: minuTegelane.värv,
+    kiirus: minuTegelane.kiirus
   });
 }
 
